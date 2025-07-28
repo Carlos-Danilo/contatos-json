@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 class Contato:
     def __init__(self, id, nome, email, telefone, data_nascimento):
@@ -6,14 +7,14 @@ class Contato:
         self.nome = nome
         self.email = email
         self.telefone = telefone
-        self.data_nascimento = data_nascimento  # string: "dd/mm/aaaa"
+        self.data_nascimento = datetime.strptime(data_nascimento, "%d/%m/%Y")
 
     def __str__(self):
         return (f"ID: {self.id}\n"
                 f"Nome: {self.nome}\n"
                 f"E-mail: {self.email}\n"
                 f"Telefone: {self.telefone}\n"
-                f"Data de Nascimento: {self.data_nascimento}")
+                f"Data de Nascimento: {self.data_nascimento.strftime('%d/%m/%Y')}")
 
     def to_dict(self):
         return {
@@ -21,7 +22,7 @@ class Contato:
             "nome": self.nome,
             "email": self.email,
             "telefone": self.telefone,
-            "data_nascimento": self.data_nascimento
+            "data_nascimento": self.data_nascimento.strftime("%d/%m/%Y")
         }
 
     @staticmethod
@@ -76,9 +77,12 @@ class ContatoUI:
         email = input("E-mail: ")
         telefone = input("Telefone: ")
         data = input("Data de nascimento (dd/mm/aaaa): ")
-        contato = Contato(id, nome, email, telefone, data)
-        self.contatos[id] = contato
-        print("Contato inserido com sucesso.")
+        try:
+            contato = Contato(id, nome, email, telefone, data)
+            self.contatos[id] = contato
+            print("Contato inserido com sucesso.")
+        except ValueError:
+            print("Data inválida. Use o formato dd/mm/aaaa.")
 
     def listar(self):
         if not self.contatos:
@@ -106,11 +110,14 @@ class ContatoUI:
         email = input("Novo email: ")
         telefone = input("Novo telefone: ")
         data = input("Nova data de nascimento (dd/mm/aaaa): ")
-        contato.nome = nome
-        contato.email = email
-        contato.telefone = telefone
-        contato.data_nascimento = data
-        print("Contato atualizado.")
+        try:
+            contato.nome = nome
+            contato.email = email
+            contato.telefone = telefone
+            contato.data_nascimento = datetime.strptime(data, "%d/%m/%Y")
+            print("Contato atualizado.")
+        except ValueError:
+            print("Data inválida.")
 
     def excluir(self):
         id = input("ID do contato a excluir: ")
@@ -135,7 +142,7 @@ class ContatoUI:
             mes = int(input("Informe o mês (1 a 12): "))
             encontrados = [
                 c for c in self.contatos.values()
-                if int(c.data_nascimento.split("/")[1]) == mes
+                if c.data_nascimento.month == mes
             ]
             if encontrados:
                 for c in encontrados:
@@ -152,12 +159,11 @@ class ContatoUI:
                 dados = json.load(arquivo)
                 self.contatos = {d["id"]: Contato.from_dict(d) for d in dados}
             print("Contatos carregados de 'contatos.json'.")
-            self.listar()  
+            self.listar()
         except FileNotFoundError:
             print("Arquivo não encontrado.")
         except Exception as e:
             print("Erro ao abrir:", e)
-
 
     def salvar(self):
         try:
